@@ -8,10 +8,10 @@ st.title("🏠 Control - Abraham")
 # --- MEMORIA ---
 if "gastos" not in st.session_state:
     st.session_state.gastos = [
-        {"nombre": "Renta", "monto": 500, "tipo": "Mensual"},
-        {"nombre": "Gas", "monto": 200, "tipo": "Mensual"},
-        {"nombre": "Luz", "monto": 300, "tipo": "Mensual"},
-        {"nombre": "Internet", "monto": 400, "tipo": "Mensual"},
+        {"nombre": "Renta", "monto": 3200, "tipo": "Mensual"},
+        {"nombre": "Gas", "monto": 1000, "tipo": "Mensual"},
+        {"nombre": "Luz", "monto": 350, "tipo": "Mensual"},
+        {"nombre": "Internet", "monto": 500, "tipo": "Mensual"},
     ]
 if "historial" not in st.session_state:
     st.session_state.historial = []
