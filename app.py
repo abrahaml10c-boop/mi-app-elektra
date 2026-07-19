@@ -1,32 +1,84 @@
+
 import streamlit as st
 
-st.title("Mi Control Elektra - Mai")
-st.write("Préstamo de $58,500 - Pago $966 x semana")
+st.set_page_config(page_title="Control Familiar Abraham", page_icon="🏠")
 
-sueldo = st.number_input("¿Cuánto ganaste esta semana?", min_value=0, value=2500, step=100)
-deuda_hoy = 32960
-pago_semana = 966
-semanas_faltan = 46
+st.title("🏠 Control Familiar - Abraham")
+st.caption("Tú: semanal (viernes) | Esposa: quincenal")
 
-if st.button("Calcular mi semana"):
-    queda = sueldo - pago_semana
+# --- INGRESOS ---
+st.header("1. Ingresos")
+col1, col2 = st.columns(2)
+with col1:
+    mi_sueldo = st.number_input("Tu sueldo (viernes)", value=2500)
+with col2:
+    sueldo_esposa_qna = st.number_input("Sueldo esposa (quincenal)", value=3000)
+
+ingreso_esposa_semanal = sueldo_esposa_qna / 2
+extra = st.number_input("Extra / Otro ingreso", value=0)
+
+total_ingresos = mi_sueldo + ingreso_esposa_semanal + extra
+st.info(f"Total para esta semana: ${total_ingresos:,.0f} (Tuyo ${mi_sueldo} + Esposa ${ingreso_esposa_semanal:.0f} + Extra ${extra})")
+
+# --- ELEKTRA PRIMERO ---
+st.header("2. Elektra - PRIORIDAD")
+pago_elektra = st.number_input("Pago Elektra semanal", value=966)
+dinero_para_casa = total_ingresos - pago_elektra
+
+if dinero_para_casa < 0:
+    st.error(f"🚨 ¡ALERTA! Te faltan ${abs(dinero_para_casa):.0f} para pagar Elektra")
+else:
+    st.success(f"✅ Pagas Elektra y te quedan ${dinero_para_casa:.0f} para la casa")
+
+# --- GASTOS CASA ---
+st.header("3. Gastos de Casa")
+
+if "gastos" not in st.session_state:
+    st.session_state.gastos = [
+        {"nombre": "Renta", "monto": 500, "tipo": "Semanal"},
+        {"nombre": "Gas", "monto": 200, "tipo": "Mensual"},
+        {"nombre": "Luz", "monto": 300, "tipo": "Mensual"},
+        {"nombre": "Internet", "monto": 400, "tipo": "Mensual"},
+    ]
+
+# Mostrar gastos
+total_gastos_semanales = 0
+for i, g in enumerate(st.session_state.gastos):
+    c1, c2, c3, c4 = st.columns([3,2,2,1])
+    with c1:
+        g["nombre"] = st.text_input(f"Concepto {i+1}", value=g["nombre"], key=f"nom_{i}")
+    with c2:
+        g["monto"] = st.number_input(f"Monto", value=g["monto"], key=f"mon_{i}")
+    with c3:
+        g["tipo"] = st.selectbox("Tipo", ["Semanal", "Mensual"], index=0 if g["tipo"]=="Semanal" else 1, key=f"tip_{i}")
+    with c4:
+        if st.button("❌", key=f"del_{i}"):
+            st.session_state.gastos.pop(i)
+            st.rerun()
     
-    st.divider()
-    st.subheader(f"Te quedan: ${queda}")
-    
-    if queda >= 1000:
-        st.success("✅ Vas bien bro, la armas")
-    elif queda >= 500:
-        st.warning("⚠️ Vas justo, no gastes de más")
+    # Convertir a semanal
+    if g["tipo"] == "Mensual":
+        total_gastos_semanales += g["monto"] / 4
     else:
-        st.error("🚨 Estás muy apretado, cuidado")
+        total_gastos_semanales += g["monto"]
 
-    st.divider()
-    st.write(f"Si liquidas hoy debes: **${deuda_hoy}**")
-    st.write(f"Si pagas semana a semana pagarás: **${pago_semana * semanas_faltan}**")
-    st.write(f"Te ahorras liquidando hoy: **${(pago_semana * semanas_faltan) - deuda_hoy}**")
+if st.button("➕ Agregar otro gasto"):
+    st.session_state.gastos.append({"nombre": "Nuevo", "monto": 0, "tipo": "Semanal"})
+    st.rerun()
 
-    extra = st.number_input("¿Si das extra cuánto darías?", min_value=0, value=0, step=50)
-    if extra > 0:
-        nueva_deuda = deuda_hoy - extra
-        st.info(f"Si das ${extra} extra, tu nueva deuda sería ${nueva_deuda}")
+st.divider()
+st.metric("Total gastos esta semana", f"${total_gastos_semanales:.0f}")
+
+# --- RESUMEN FINAL ---
+restante = dinero_para_casa - total_gastos_semanales
+st.header("4. Resumen Final")
+
+st.write(f"Ingresos: ${total_ingresos:.0f}")
+st.write(f"- Elektra: ${pago_elektra:.0f}")
+st.write(f"- Casa: ${total_gastos_semanales:.0f}")
+
+if restante >= 0:
+    st.balloons()
+    st.success(f"¡TE QUEDAN ${restante:.0f} LIBRES! Vas con todo bro 🙏")
+else:
+    st.error(f"Te faltan ${abs(restante):.0f}. Hay que recortar gastos esta semana")
