@@ -1,38 +1,11 @@
 
 import streamlit as st
+from datetime import date
 
-st.set_page_config(page_title="Control Familiar Abraham", page_icon="🏠")
+st.set_page_config(page_title="Control Abraham", page_icon="🏠")
+st.title("🏠 Control - Abraham")
 
-st.title("🏠 Control Familiar - Abraham")
-st.caption("Tú: semanal (viernes) | Esposa: quincenal")
-
-# --- INGRESOS ---
-st.header("1. Ingresos")
-col1, col2 = st.columns(2)
-with col1:
-    mi_sueldo = st.number_input("Tu sueldo (viernes)", value=2500)
-with col2:
-    sueldo_esposa_qna = st.number_input("Sueldo esposa (quincenal)", value=3000)
-
-ingreso_esposa_semanal = sueldo_esposa_qna / 2
-extra = st.number_input("Extra / Otro ingreso", value=0)
-
-total_ingresos = mi_sueldo + ingreso_esposa_semanal + extra
-st.info(f"Total para esta semana: ${total_ingresos:,.0f} (Tuyo ${mi_sueldo} + Esposa ${ingreso_esposa_semanal:.0f} + Extra ${extra})")
-
-# --- ELEKTRA PRIMERO ---
-st.header("2. Elektra - PRIORIDAD")
-pago_elektra = st.number_input("Pago Elektra semanal", value=966)
-dinero_para_casa = total_ingresos - pago_elektra
-
-if dinero_para_casa < 0:
-    st.error(f"🚨 ¡ALERTA! Te faltan ${abs(dinero_para_casa):.0f} para pagar Elektra")
-else:
-    st.success(f"✅ Pagas Elektra y te quedan ${dinero_para_casa:.0f} para la casa")
-
-# --- GASTOS CASA ---
-st.header("3. Gastos de Casa")
-
+# --- INICIALIZAR MEMORIA ---
 if "gastos" not in st.session_state:
     st.session_state.gastos = [
         {"nombre": "Renta", "monto": 500, "tipo": "Semanal"},
@@ -40,46 +13,77 @@ if "gastos" not in st.session_state:
         {"nombre": "Luz", "monto": 300, "tipo": "Mensual"},
         {"nombre": "Internet", "monto": 400, "tipo": "Mensual"},
     ]
+if "historial" not in st.session_state:
+    st.session_state.historial = []
+if "elektra_pagado" not in st.session_state:
+    st.session_state.elektra_pagado = False
 
-# Mostrar gastos
+# --- 1. INGRESOS ---
+st.header("1. Ingresos de la semana")
+mi_sueldo = st.number_input("Tu sueldo (viernes)", value=2500)
+extra = st.number_input("Extra", value=0)
+total_ingresos = mi_sueldo + extra
+st.metric("Total", f"${total_ingresos:,.0f}")
+
+# --- 2. ELEKTRA ---
+st.header("2. Elektra")
+pago_elektra = st.number_input("Pago Elektra", value=966)
+
+if st.button("✅ Ya pagué Elektra esta semana" if not st.session_state.elektra_pagado else "✔️ Elektra PAGADO"):
+    st.session_state.elektra_pagado = not st.session_state.elektra_pagado
+    st.rerun()
+
+if st.session_state.elektra_pagado:
+    st.success("Elektra pagado - ¡Bien hecho!")
+else:
+    st.warning("Pendiente de pagar Elektra")
+
+dinero_para_casa = total_ingresos - pago_elektra
+
+# --- 3. GASTOS ---
+st.header("3. Casa - Renta, Gas, Luz, Internet")
 total_gastos_semanales = 0
 for i, g in enumerate(st.session_state.gastos):
     c1, c2, c3, c4 = st.columns([3,2,2,1])
     with c1:
-        g["nombre"] = st.text_input(f"Concepto {i+1}", value=g["nombre"], key=f"nom_{i}")
+        g["nombre"] = st.text_input(f"Concepto", value=g["nombre"], key=f"nom_{i}", label_visibility="collapsed")
     with c2:
-        g["monto"] = st.number_input(f"Monto", value=g["monto"], key=f"mon_{i}")
+        g["monto"] = st.number_input(f"Monto", value=g["monto"], key=f"mon_{i}", label_visibility="collapsed")
     with c3:
-        g["tipo"] = st.selectbox("Tipo", ["Semanal", "Mensual"], index=0 if g["tipo"]=="Semanal" else 1, key=f"tip_{i}")
+        g["tipo"] = st.selectbox("Tipo", ["Semanal", "Mensual"], index=0 if g["tipo"]=="Semanal" else 1, key=f"tip_{i}", label_visibility="collapsed")
     with c4:
         if st.button("❌", key=f"del_{i}"):
             st.session_state.gastos.pop(i)
             st.rerun()
-    
-    # Convertir a semanal
     if g["tipo"] == "Mensual":
         total_gastos_semanales += g["monto"] / 4
     else:
         total_gastos_semanales += g["monto"]
 
-if st.button("➕ Agregar otro gasto"):
+if st.button("➕ Agregar gasto"):
     st.session_state.gastos.append({"nombre": "Nuevo", "monto": 0, "tipo": "Semanal"})
     st.rerun()
 
+# --- 4. RESUMEN ---
 st.divider()
-st.metric("Total gastos esta semana", f"${total_gastos_semanales:.0f}")
-
-# --- RESUMEN FINAL ---
 restante = dinero_para_casa - total_gastos_semanales
-st.header("4. Resumen Final")
 
-st.write(f"Ingresos: ${total_ingresos:.0f}")
-st.write(f"- Elektra: ${pago_elektra:.0f}")
-st.write(f"- Casa: ${total_gastos_semanales:.0f}")
+st.header("4. Resumen")
+st.write(f"Ingresos: ${total_ingresos:.0f} - Elektra: ${pago_elektra:.0f} - Casa: ${total_gastos_semanales:.0f}")
 
-if restante >= 0:
-    if restante >= 500:
-        st.balloons()
-    st.success(f"¡TE QUEDAN ${restante:.0f} LIBRES! Vas con todo bro 🙏")
+if restante >= 500:
+    st.balloons()
+    st.success(f"TE QUEDAN ${restante:.0f} LIBRES")
+elif restante >= 0:
+    st.success(f"TE QUEDAN ${restante:.0f} LIBRES")
 else:
-    st.error(f"Te faltan ${abs(restante):.0f}. Hay que recortar gastos esta semana")
+    st.error(f"Te faltan ${abs(restante):.0f}")
+
+if st.button("💾 Guardar esta semana en historial"):
+    st.session_state.historial.append({"fecha": str(date.today()), "restante": restante, "ingreso": total_ingresos})
+    st.success("Guardado")
+
+if st.session_state.historial:
+    st.subheader("Historial")
+    for h in reversed(st.session_state.historial[-5:]):
+        st.write(f"{h['fecha']}: te quedaron ${h['restante']:.0f}")
