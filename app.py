@@ -78,7 +78,8 @@ st.write(f"- Elektra: ${pago_elektra:.0f}")
 st.write(f"- Casa: ${total_gastos_semanales:.0f}")
 
 if restante >= 0:
-    st.balloons()
+    if restante >= 500:
+        st.balloons()
     st.success(f"¡TE QUEDAN ${restante:.0f} LIBRES! Vas con todo bro 🙏")
 else:
     st.error(f"Te faltan ${abs(restante):.0f}. Hay que recortar gastos esta semana")
