@@ -79,7 +79,30 @@ elif restante >= 0:
 else:
     st.error(f"Te faltan ${abs(restante):.0f}")
 
+st.divider()
+st.subheader("📅 ¿Qué semana es?")
+semana = st.date_input("Selecciona la fecha de este viernes", value=date.today())
+
 if st.button("💾 Guardar esta semana en historial"):
+    st.session_state.historial.append({
+        "fecha": str(semana), 
+        "restante": restante, 
+        "ingreso": total_ingresos,
+        "elektra": "Pagado" if st.session_state.elektra_pagado else "Pendiente"
+    })
+    st.success(f"Guardada semana del {semana} - Te quedaron ${restante:.0f}")
+    if restante >= 500:
+        st.balloons()
+
+if st.session_state.historial:
+    st.subheader("📜 Historial por semana")
+    for h in reversed(st.session_state.historial[-10:]):
+        icono = "✅" if h['restante'] >=0 else "❌"
+        st.write(f"{icono} **{h['fecha']}** | Quedaron: ${h['restante']:.0f} | Elektra: {h['elektra']}")
+    
+    if st.button("🗑️ Borrar historial"):
+        st.session_state.historial = []
+        st.rerun()
     st.session_state.historial.append({"fecha": str(date.today()), "restante": restante, "ingreso": total_ingresos})
     st.success("Guardado")
 
